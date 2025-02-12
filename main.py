@@ -8,7 +8,7 @@ def spin_controller(controller):
     for i in range(-100, 102, 2):
         controller.LogiPlaySpringForce(0, i, 100, 40)
         controller.logi_update()
-        time.sleep(0.2)
+        time.sleep(0.1)
 
 def get_wheel_state(controller):
     controller.logi_update()
@@ -30,17 +30,21 @@ def save_to_csv(data, filename):
     with open(filename, 'a') as f:
         f.write(f"{data['Steering']}, {data['Throttle']}, {data['Brake']}, {data['Timestamp']}\n")
 
+def write_csv_header(filename):
+    with open(filename, 'w') as f:
+        f.write("Steering, Throttle, Brake, Timestamp\n")
+
 if __name__ == "__main__":
     controller = LogitechController()
-
     spin_test()
 
     if not controller.steering_initialize():
         print("Failed to initialize the controller.")
     
-    # Create a new file with a timestamp in the name
+    # Create a new file with a timestamp and write the headers
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     filename = f"wheel_data_{timestamp}.csv"
+    write_csv_header(filename)
     
     # SteeringPosition 0 is center,  -32768 is full left, 32767 is full right
     # ThrottlePosition 0 # 32767 is no throttle, -32768 is full throttle
