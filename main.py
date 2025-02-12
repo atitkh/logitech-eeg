@@ -14,7 +14,7 @@ def get_wheel_state(controller):
     controller.logi_update()
     state_pointer = controller.LogiGetStateENGINES(0)
     state = state_pointer.contents
-    return { "Steering": state.lX, "Throttle": state.lY, "Brake": state.lRz }
+    return { "Steering": state.lX, "Throttle": state.lY, "Brake": state.lRz, "Timestamp": time.time() }
 
 def get_wheel(controller):
     if not controller.steering_initialize():
@@ -76,13 +76,21 @@ def spin_test():
 
     controller.steering_shutdown()
 
+def save_to_csv(data):
+    with open('wheel_data.csv', 'a') as f:
+        f.write(f"{data['Steering']}, {data['Throttle']}, {data['Brake']}, {data['Timestamp']}\n")
+
 if __name__ == "__main__":
-    logging.basicConfig(filename='wheel_data.log', level=logging.INFO, format='%(asctime)s - %(message)s')
     controller = LogitechController()
+
+    if not controller.steering_initialize():
+        print("Failed to initialize the controller.")
+    
     # SteeringPosition 0 is center,  -32768 is full left, 32767 is full right
     # ThrottlePosition 0 # 32767 is no throttle, -32768 is full throttle
     # BrakePosition 0 # 32767 is no brake, -32768 is full brake
     while True:
         wheel_state = get_wheel_state(controller)
-        logging.info(wheel_state)
+        print(wheel_state)
+        save_to_csv(wheel_state)
         time.sleep(0.1)
