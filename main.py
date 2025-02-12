@@ -2,7 +2,7 @@ import sys
 sys.path.append('../logidrivepy')
 from logidrivepy import LogitechController
 import time
-import logging
+import datetime
 
 def spin_controller(controller):
     for i in range(-100, 102, 2):
@@ -16,56 +16,6 @@ def get_wheel_state(controller):
     state = state_pointer.contents
     return { "Steering": state.lX, "Throttle": state.lY, "Brake": state.lRz, "Timestamp": time.time() }
 
-def get_wheel(controller):
-    if not controller.steering_initialize():
-        print("Failed to initialize the controller.")
-        return
-
-    try:
-        while True:
-            controller.logi_update()
-            state_pointer = controller.LogiGetStateENGINES(0)
-            state = state_pointer.contents
-            print(state)
-            print(f"Steering: {state.lX}")
-            print(f"Throttle: {state.lY}")
-            print(f"Brake: {state.lRz}")
-            print("\n")
-            # ("lX", ctypes.c_int),
-            # ("lY", ctypes.c_int),
-            # ("lZ", ctypes.c_int),
-            # ("lRx", ctypes.c_int),
-            # ("lRy", ctypes.c_int),
-            # ("lRz", ctypes.c_int),
-            # ("rglSlider", ctypes.c_int * 2),
-            # ("rgdwPOV", ctypes.c_uint * 4),
-            # ("rgbButtons", ctypes.c_byte * 128),
-            # ("lVX", ctypes.c_int),
-            # ("lVY", ctypes.c_int),
-            # ("lVZ", ctypes.c_int),
-            # ("lVRx", ctypes.c_int),
-            # ("lVRy", ctypes.c_int),
-            # ("lVRz", ctypes.c_int),
-            # ("rglVSlider", ctypes.c_int * 2),
-            # ("lAX", ctypes.c_int),
-            # ("lAY", ctypes.c_int),
-            # ("lAZ", ctypes.c_int),
-            # ("lARx", ctypes.c_int),
-            # ("lARy", ctypes.c_int),
-            # ("lARz", ctypes.c_int),
-            # ("rglASlider", ctypes.c_int * 2),
-            # ("lFX", ctypes.c_int),
-            # ("lFY", ctypes.c_int),
-            # ("lFZ", ctypes.c_int),
-            # ("lFRx", ctypes.c_int),
-            # ("lFRy", ctypes.c_int),
-            # ("lFRz", ctypes.c_int),
-            # ("rglFSlider", ctypes.c_int * 2)
-            time.sleep(0.1)
-    finally:
-        controller.steering_shutdown()
-
-
 def spin_test():
     controller = LogitechController()
 
@@ -76,15 +26,21 @@ def spin_test():
 
     controller.steering_shutdown()
 
-def save_to_csv(data):
-    with open('wheel_data.csv', 'a') as f:
+def save_to_csv(data, filename):
+    with open(filename, 'a') as f:
         f.write(f"{data['Steering']}, {data['Throttle']}, {data['Brake']}, {data['Timestamp']}\n")
 
 if __name__ == "__main__":
     controller = LogitechController()
 
+    spin_test()
+
     if not controller.steering_initialize():
         print("Failed to initialize the controller.")
+    
+    # Create a new file with a timestamp in the name
+    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = f"wheel_data_{timestamp}.csv"
     
     # SteeringPosition 0 is center,  -32768 is full left, 32767 is full right
     # ThrottlePosition 0 # 32767 is no throttle, -32768 is full throttle
@@ -92,5 +48,5 @@ if __name__ == "__main__":
     while True:
         wheel_state = get_wheel_state(controller)
         print(wheel_state)
-        save_to_csv(wheel_state)
+        save_to_csv(wheel_state, filename)
         time.sleep(0.1)
