@@ -2,15 +2,21 @@ import sys
 sys.path.append('../logidrivepy')
 from logidrivepy import LogitechController
 import time
+import logging
 
 def spin_controller(controller):
     for i in range(-100, 102, 2):
         controller.LogiPlaySpringForce(0, i, 100, 40)
         controller.logi_update()
-        time.sleep(0.1)
+        time.sleep(0.2)
 
-def get_wheel():
-    controller = LogitechController()
+def get_wheel_state(controller):
+    controller.logi_update()
+    state_pointer = controller.LogiGetStateENGINES(0)
+    state = state_pointer.contents
+    return { "Steering": state.lX, "Throttle": state.lY, "Brake": state.lRz }
+
+def get_wheel(controller):
     if not controller.steering_initialize():
         print("Failed to initialize the controller.")
         return
@@ -70,33 +76,13 @@ def spin_test():
 
     controller.steering_shutdown()
 
-
 if __name__ == "__main__":
-    # spin_test()
-    get_wheel()
-
-
-# import sys
-# sys.path.append('../logidrivepy')
-# from logidrivepy import LogitechController
-# import time
-
-# controller = LogitechController()
-# controller.steering_initialize()
-
-# while True:
-#     state_pointer = controller.LogiGetStateENGINES(0)
-#     state = state_pointer.contents
-
-#     # Retrieve force feedback values
-#     force_x = state.lFX
-#     force_y = state.lFY
-#     force_z = state.lFZ
-
-#     # Print or use the force feedback values
-#     print(f"Force X: {force_x}")
-#     print(f"Force Y: {force_y}")
-#     print(f"Force Z: {force_z}")
-
-
-# controller.steering_shutdown()
+    logging.basicConfig(filename='wheel_data.log', level=logging.INFO, format='%(asctime)s - %(message)s')
+    controller = LogitechController()
+    # SteeringPosition 0 is center,  -32768 is full left, 32767 is full right
+    # ThrottlePosition 0 # 32767 is no throttle, -32768 is full throttle
+    # BrakePosition 0 # 32767 is no brake, -32768 is full brake
+    while True:
+        wheel_state = get_wheel_state(controller)
+        logging.info(wheel_state)
+        time.sleep(0.1)
